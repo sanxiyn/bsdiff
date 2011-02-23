@@ -38,6 +38,8 @@ __FBSDID("$FreeBSD: src/usr.bin/bsdiff/bsdiff/bsdiff.c,v 1.1 2005/08/06 01:59:05
 #include <string.h>
 #include <unistd.h>
 
+#include <divsufsort64.h>
+
 #define MIN(x,y) (((x)<(y)) ? (x) : (y))
 
 static void split(off_t *I,off_t *V,off_t start,off_t len,off_t h)
@@ -198,7 +200,7 @@ int main(int argc,char *argv[])
 	int fd;
 	u_char *old,*new;
 	off_t oldsize,newsize;
-	off_t *I,*V;
+	off_t *I;
 	off_t scan,pos,len;
 	off_t lastscan,lastpos,lastoffset;
 	off_t oldscore,scsc;
@@ -224,12 +226,9 @@ int main(int argc,char *argv[])
 		(read(fd,old,oldsize)!=oldsize) ||
 		(close(fd)==-1)) err(1,"%s",argv[1]);
 
-	if(((I=malloc((oldsize+1)*sizeof(off_t)))==NULL) ||
-		((V=malloc((oldsize+1)*sizeof(off_t)))==NULL)) err(1,NULL);
+	if((I=malloc((oldsize+1)*sizeof(off_t)))==NULL) err(1,NULL);
 
-	qsufsort(I,V,old,oldsize);
-
-	free(V);
+	divsufsort64(old,I,oldsize);
 
 	/* Allocate newsize+1 bytes instead of newsize bytes to ensure
 		that we never try to malloc(0) and get a NULL pointer */
